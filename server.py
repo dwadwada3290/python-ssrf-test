@@ -15,5 +15,12 @@ def catch_all(path):
 
     return "OK", 200
 
+@app.route("/redirect")
+def red():
+    url = request.args.get("to")
+    return redirect(url)
+
+
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
