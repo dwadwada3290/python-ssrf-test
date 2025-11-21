@@ -1,7 +1,8 @@
-from flask import Flask, request
+from flask import Flask, request, redirect
 
 app = Flask(__name__)
 
+# SSRF test logging
 @app.route("/", defaults={"path": ""}, methods=["GET","POST"])
 @app.route("/<path:path>", methods=["GET","POST"])
 def catch_all(path):
@@ -12,15 +13,16 @@ def catch_all(path):
     print("Query:", dict(request.args))
     print("Body:", request.get_data())
     print("--------------------------")
-
     return "OK", 200
 
+# Redirect ديناميكي
 @app.route("/redirect")
 def red():
     url = request.args.get("to")
-    return redirect(url)
-
-
+    if url:
+        return redirect(url, code=302)
+    else:
+        return "No 'to' parameter provided", 400
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
