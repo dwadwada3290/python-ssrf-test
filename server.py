@@ -12,7 +12,7 @@ def fake_image():
 @app.route('/not_image')
 def not_image():
     # محتوى نصي بدل صورة
-    return Response("hello its me", mimetype='text/plain')
+    return Response("hello its me", mimetype='image/png')
     
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
