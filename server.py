@@ -14,28 +14,56 @@ def catch_all(path):
     print("Body:", request.get_data())
     print("--------------------------")
     return "OK", 200
+    
+@app.route('/fetch_data', methods=['GET'])
+def fetch_data():
+    """
+    جلب محتوى رابط مُعطى في محددات الاستعلام (Query Parameters).
+    مثال للاستخدام: http://127.0.0.1:5000/fetch_data?url=https://example.com
+    """
+    
+    # 1. الحصول على قيمة مفتاح 'url' من محددات الاستعلام (request.args)
+    url_to_fetch = request.args.get('url')
 
-@app.route('/redir', methods=['GET', 'POST'])
-def redir():
-    """Handle redirects with loop counter - after 10 redirects, go to final SSRF location."""
-    # Get the current redirect count from query parameter, default to 0
-    redirect_count = int(request.args.get('count', 0))
+    # التحقق مما إذا تم تمرير الرابط
+    if not url_to_fetch:
+        return jsonify({
+            "error": "الرجاء توفير رابط (URL) في مسار الطلب باستخدام المفتاح 'url'.",
+            "example": "/fetch_data?url=https://www.google.com"
+        }), 400
 
-    # Increment the counter
-    redirect_count += 1
-    status_code = 301 + redirect_count
-    # If we've reached 10 redirects, redirect to our desired location
-    # To grab AWS metadata keys, you would hit http://169.254.169.254/latest/meta-data/iam/security-credentials/role-name-here
-    if redirect_count >= 10:
-        return redirect("http://169.254.169.254/latest/meta-data/iam/security-credentials/", code=302)
-    print("trying: " + str(status_code))
-    # Otherwise, redirect back to /redir with incremented counter
-    return redirect(f"/redir?count={redirect_count}", code=status_code)
+    try:
+        # 2. إرسال طلب HTTP GET لجلب المحتوى
+        # يُنصح دائماً باستخدام مهلة (timeout)
+        response = requests.get(url_to_fetch, timeout=10)
 
-@app.route('/start', methods=['POST', 'GET'])
-def start():
-    """Starting point for redirect loop."""
-    return redirect("/redir", code=302)
+        # 3. التحقق من حالة الاستجابة وإثارة خطأ إذا كانت سيئة
+        response.raise_for_status()
+
+        # 4. إرجاع المحتوى النصي للرابط
+        return jsonify({
+            "status": "success",
+            "url": url_to_fetch,
+            # محتوى الصفحة
+            "content": response.text,
+            "encoding": response.encoding
+        })
+
+    except requests.exceptions.HTTPError as e:
+        # التعامل مع أخطاء HTTP (مثل 404 Not Found)
+        return jsonify({
+            "status": "error",
+            "message": f"فشل جلب الرابط: خطأ HTTP {response.status_code}",
+            "details": str(e)
+        }), 500
+    except requests.exceptions.RequestException as e:
+        # التعامل مع أخطاء الاتصال أو المهلة
+        return jsonify({
+            "status": "error",
+            "message": f"حدث خطأ أثناء محاولة الاتصال بالرابط: {type(e).__name__}",
+            "details": str(e)
+        }), 500
+
     
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)
