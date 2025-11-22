@@ -3,16 +3,26 @@ import requests
 
 app = Flask(__name__)
 
+@app.route('/1')
+def fake_image():
+    # نرجع Redirect إلى ملف غير صورة
+    return redirect('/2', code=302)
+
+# الملف الذي يتم التحويل إليه
+@app.route('/2')
+def not_image():
+    # محتوى نصي بدل صورة
+    return redirect('/3', code=302)
+
+@app.route('/3')
+def not_image():
+    # محتوى نصي بدل صورة
+    return redirect('/1', code=302)
+    
 @app.route('/fake.png')
 def fake_image():
     # نرجع Redirect إلى ملف غير صورة
     return redirect('/not_image', code=302)
-
-# الملف الذي يتم التحويل إليه
-@app.route('/not_image')
-def not_image():
-    # محتوى نصي بدل صورة
-    return Response("hello its me", mimetype='image/x-fklsflsd+png')
 
 
 @app.route("/proxy")
