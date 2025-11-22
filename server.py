@@ -1,4 +1,5 @@
-from flask import Flask, request, redirect
+from flask import Flask, request, redirect, jsonify
+import requests
 
 app = Flask(__name__)
 
